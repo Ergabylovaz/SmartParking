@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Porsche Parking Simulator</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{overflow:hidden;background:#1a1a2e}
+        #controls{
+            position:absolute;
+            bottom:20px;
+            left:50%;
+            transform:translateX(-50%);
+            background:rgba(0,0,0,0.8);
+            padding:15px;
+            border-radius:15px;
+            display:flex;
+            gap:10px;
+            z-index:100;
+        }
+        button{
+            padding:10px 20px;
+            font-size:18px;
+            cursor:pointer;
+            background:#3b82f6;
+            color:white;
+            border:none;
+            border-radius:8px;
+        }
+        button.danger{background:#ef4444}
+        .info{
+            position:absolute;
+            top:20px;
+            left:20px;
+            color:white;
+            background:rgba(0,0,0,0.7);
+            padding:10px;
+            border-radius:8px;
+            font-family:monospace;
+            z-index:100;
+        }
+        .distance{
+            position:absolute;
+            top:20px;
+            right:20px;
+            color:white;
+            background:rgba(0,0,0,0.7);
+            padding:10px 20px;
+            border-radius:8px;
+            font-size:24px;
+            font-weight:bold;
+            font-family:monospace;
+            z-index:100;
+        }
+    </style>
+</head>
+<body>
+    <div class="info">🚗 PORSCHE 911 - Симулятор парковки</div>
+    <div class="distance" id="distance">120 см</div>
+    <div id="controls">
+        <button id="forward">⬆️ ВПЕРЁД</button>
+        <button id="back">⬇️ НАЗАД</button>
+        <button id="stop" class="danger">🛑 СТОП</button>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        
+        // Создаем сцену
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x1a1a2e);
+        scene.fog = new THREE.FogExp2(0x1a1a2e, 0.02);
+        
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(5, 3, 4);
+        camera.lookAt(0, 0, -2);
+        
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        document.body.appendChild(renderer.domElement);
+        
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.target.set(0, 0, -2);
+        
+        // Освещение
+        const ambient = new THREE.AmbientLight(0x404060);
+        scene.add(ambient);
+        const light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(5, 8, 5);
+        light.castShadow = true;
+        scene.add(light);
+        const fill = new THREE.PointLight(0x4466cc, 0.4);
+        fill.position.set(-2, 3, 0);
+        scene.add(fill);
+        
+        // Пол
+        const ground = new THREE.Mesh(
+            new THREE.PlaneGeometry(12, 10),
+            new THREE.MeshStandardMaterial({ color: 0x2d3748, roughness: 0.7 })
+        );
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.y = -0.8;
+        ground.receiveShadow = true;
+        scene.add(ground);
+        
+        // Сетка
+        const grid = new THREE.GridHelper(12, 20, 0x3b82f6, 0x334155);
+        grid.position.y = -0.75;
+        scene.add(grid);
+        
+        // Стена
+        const wall = new THREE.Mesh(
+            new THREE.BoxGeometry(6, 2.5, 0.2),
+            new THREE.MeshStandardMaterial({ color: 0x475569 })
+        );
+        wall.position.set(0, -0.2, -2);
+        wall.receiveShadow = true;
+        scene.add(wall);
+        
+        // Создаем PORSCHE 911 вручную (гарантированно работает!)
+        const porsche = new THREE.Group();
+        
+        // Кузов (серебристый)
+        const body = new THREE.Mesh(
+            new THREE.BoxGeometry(1.4, 0.35, 2.5),
+            new THREE.MeshStandardMaterial({ color: 0xC0C0C0, metalness: 0.85, roughness: 0.25 })
+        );
+        body.castShadow = true;
+        body.position.y = 0;
+        porsche.add(body);
+        
+        // Крыша (черная)
+        const roof = new THREE.Mesh(
+            new THREE.BoxGeometry(1.0, 0.25, 1.6),
+            new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.7 })
+        );
+        roof.castShadow = true;
+        roof.position.y = 0.28;
+        porsche.add(roof);
+        
+        // Лобовое стекло
+        const glass = new THREE.Mesh(
+            new THREE.BoxGeometry(1.1, 0.18, 0.05),
+            new THREE.MeshStandardMaterial({ color: 0x88aaff, metalness: 0.9, emissive: 0x112233 })
+        );
+        glass.position.set(0, 0.22, 0.85);
+        porsche.add(glass);
+        
+        // Фары
+        const headlightMat = new THREE.MeshStandardMaterial({ color: 0xffaa66, emissive: 0xff4400 });
+        const leftHead = new THREE.Mesh(new THREE.SphereGeometry(0.12), headlightMat);
+        leftHead.position.set(-0.55, 0.1, 1.28);
+        porsche.add(leftHead);
+        
+        const rightHead = new THREE.Mesh(new THREE.SphereGeometry(0.12), headlightMat);
+        rightHead.position.set(0.55, 0.1, 1.28);
+        porsche.add(rightHead);
+        
+        // Задние фонари
+        const tailMat = new THREE.MeshStandardMaterial({ color: 0xff3333, emissive: 0xff0000 });
+        const leftTail = new THREE.Mesh(new THREE.SphereGeometry(0.1), tailMat);
+        leftTail.position.set(-0.55, 0.1, -1.28);
+        porsche.add(leftTail);
+        
+        const rightTail = new THREE.Mesh(new THREE.SphereGeometry(0.1), tailMat);
+        rightTail.position.set(0.55, 0.1, -1.28);
+        porsche.add(rightTail);
+        
+        // Колеса
+        const wheelGeo = new THREE.CylinderGeometry(0.27, 0.27, 0.45, 24);
+        const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.9 });
+        
+        const wheelPos = [[-0.85, -0.2, -1.0], [0.85, -0.2, -1.0], [-0.85, -0.2, 0.95], [0.85, -0.2, 0.95]];
+        wheelPos.forEach(pos => {
+            const wheel = new THREE.Mesh(wheelGeo, wheelMat);
+            wheel.rotation.z = Math.PI / 2;
+            wheel.position.set(pos[0], pos[1], pos[2]);
+            wheel.castShadow = true;
+            porsche.add(wheel);
+        });
+        
+        // Диски
+        const rimMat = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.95 });
+        wheelPos.forEach(pos => {
+            const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.46, 8), rimMat);
+            rim.rotation.z = Math.PI / 2;
+            rim.position.set(pos[0], pos[1], pos[2]);
+            rim.castShadow = true;
+            porsche.add(rim);
+        });
+        
+        porsche.position.set(0, -0.65, -3);
+        porsche.rotation.y = Math.PI;
+        scene.add(porsche);
+        
+        // Парковочные линии
+        const lineMat = new THREE.LineBasicMaterial({ color: 0xfbbf24 });
+        const leftLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-1.6, -0.7, -1), new THREE.Vector3(-1.6, -0.7, 1)]), lineMat);
+        const rightLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(1.6, -0.7, -1), new THREE.Vector3(1.6, -0.7, 1)]), lineMat);
+        scene.add(leftLine);
+        scene.add(rightLine);
+        
+        // Логика движения
+        let carZ = -3;
+        let moving = false;
+        let direction = 0;
+        let beepInterval = null;
+        let isStopped = false;
+        
+        function updateDistance() {
+            const wallZ = -2;
+            const carFront = carZ + 1.2;
+            let dist = (carFront - wallZ) * 100;
+            dist = Math.max(0, Math.min(150, dist));
+            document.getElementById('distance').innerHTML = Math.round(dist) + ' см';
+            
+            // Звуковая сигнализация (как в Arduino)
+            if (!isStopped) {
+                if (dist < 10) {
+                    if (!beepInterval) {
+                        beepInterval = setInterval(() => {
+                            if (!isStopped && dist < 10) playBeep(2000, 60);
+                        }, 120);
+                    }
+                } else if (dist < 60) {
+                    const delay = Math.max(100, Math.min(500, 500 - (dist - 10) * 8));
+                    if (!beepInterval) {
+                        beepInterval = setInterval(() => {
+                            if (!isStopped && dist >= 10 && dist <= 60) playBeep(1000, 80);
+                        }, delay);
+                    }
+                } else {
+                    if (beepInterval) { clearInterval(beepInterval); beepInterval = null; }
+                }
+            }
+        }
+        
+        function playBeep(freq, dur) {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur/1000);
+                osc.start();
+                osc.stop(audioCtx.currentTime + dur/1000);
+            } catch(e) {}
+        }
+        
+        function moveCar() {
+            if (isStopped) return;
+            let newZ = carZ + direction * 0.05;
+            if (direction < 0 && newZ < -1.2) newZ = -1.2;
+            if (direction > 0 && newZ > -3) newZ = -3;
+            if (Math.abs(newZ - carZ) > 0.001) {
+                carZ = newZ;
+                porsche.position.z = carZ;
+                updateDistance();
+            }
+        }
+        
+        let moveInterval = null;
+        function startMoving(dir) {
+            if (moveInterval) clearInterval(moveInterval);
+            isStopped = false;
+            direction = dir;
+            moveInterval = setInterval(moveCar, 16);
+        }
+        
+        function stopMoving() {
+            if (moveInterval) { clearInterval(moveInterval); moveInterval = null; }
+            direction = 0;
+        }
+        
+        function stopCar() {
+            stopMoving();
+            isStopped = true;
+            if (beepInterval) { clearInterval(beepInterval); beepInterval = null; }
+        }
+        
+        document.getElementById('forward').onmousedown = () => startMoving(-1);
+        document.getElementById('forward').onmouseup = stopMoving;
+        document.getElementById('back').onmousedown = () => startMoving(1);
+        document.getElementById('back').onmouseup = stopMoving;
+        document.getElementById('stop').onclick = stopCar;
+        
+        // Анимация
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+        
+        updateDistance();
+        
+        // Добавляем надпись PORSCHE на машину
+        console.log('✅ PORSCHE 911 создан и готов к парковке!');
+    </script>
+</body>
+</html>

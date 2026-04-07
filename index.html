@@ -1,0 +1,157 @@
+л <!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>3D Симулятор парковки - Учебный тренажёр</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Дополнительные стили поверх основного CSS */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            background: #1a1a2e;
+        }
+
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            background: rgba(0,0,0,0.7);
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-size: 12px;
+            z-index: 100;
+            pointer-events: none;
+            font-family: monospace;
+        }
+
+        @media (max-width: 768px) {
+            .control-panel {
+                width: 100% !important;
+                max-height: 40vh;
+                bottom: 0;
+                top: auto !important;
+                border-left: none !important;
+                border-top: 1px solid rgba(255,255,255,0.1) !important;
+            }
+            
+            #canvas-container {
+                height: 60vh !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="info">
+        Parking Simulator | Мышь - вращать камеру
+    </div>
+    
+    <div class="main-container">
+        <div id="canvas-container"></div>
+        <div class="control-panel">
+            <div class="card">
+                <h3>📡 УЛЬТРАЗВУКОВОЙ ДАТЧИК</h3>
+                <div class="sensor-display">
+                    <div>
+                        <div class="distance-big" id="distVal">120</div>
+                        <div class="distance-unit">сантиметров</div>
+                    </div>
+                    <div class="led-group">
+                        <div class="led off" id="ledG"></div>
+                        <div class="led off" id="ledR"></div>
+                    </div>
+                </div>
+                <div id="statusBar" class="status-bar status-free">✅ Свободно — двигайтесь вперёд</div>
+            </div>
+
+            <div class="card">
+                <h3>🎮 УПРАВЛЕНИЕ</h3>
+                <div class="mode-tabs">
+                    <div class="tab active" id="tabManual">Ручной режим</div>
+                    <div class="tab" id="tabAuto">Авто-парковка</div>
+                </div>
+                
+                <div id="manualControls">
+                    <div class="controls">
+                        <button class="btn" id="btnForward">
+                            <span style="font-size:20px">⬆️</span><br>ВПЕРЁД
+                        </button>
+                        <button class="btn" id="btnBackward">
+                            <span style="font-size:20px">⬇️</span><br>НАЗАД
+                        </button>
+                        <button class="btn danger btn-full" id="btnStop">
+                            <span style="font-size:18px">⏹️</span> СТОП
+                        </button>
+                    </div>
+                    <div class="slider-wrap">
+                        <label>📏 РАССТОЯНИЕ</label>
+                        <input type="range" id="distSlider" min="0" max="150" value="120" step="1">
+                        <span class="slider-val" id="sliderOut">120 см</span>
+                    </div>
+                </div>
+                
+                <div id="autoControls" style="display:none">
+                    <div class="difficulty-row">
+                        <div class="diff-btn active" id="dEasy">🟢 Лёгкий (3.5м)</div>
+                        <div class="diff-btn" id="dMed">🟡 Средний (2.8м)</div>
+                        <div class="diff-btn" id="dHard">🔴 Узкий (2.4м)</div>
+                    </div>
+                    <button class="btn btn-full" id="startAuto">
+                        🎬 ЗАПУСТИТЬ АВТО-ПАРКОВКУ
+                    </button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>⭐ СТАТИСТИКА ПАРКОВКИ</h3>
+                <div class="score-row">
+                    <span class="score-label">Финальное расстояние</span>
+                    <span class="score-val" id="finalDist">—</span>
+                </div>
+                <div class="score-row">
+                    <span class="score-label">Оценка</span>
+                    <span id="scoreBadge"><span class="badge badge-ok">Нет данных</span></span>
+                </div>
+                <div class="score-row">
+                    <span class="score-label">Сигналы датчика</span>
+                    <span class="score-val" id="beepCount">0</span>
+                </div>
+                <div class="score-row">
+                    <span class="score-label">🔊 Звуковой сигнал</span>
+                    <span class="beep-indicator" id="beepStatus">—</span>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>💡 ИНФОРМАЦИЯ</h3>
+                <div style="font-size: 11px; color: #94a3b8; line-height: 1.5;">
+                    • 🟢 >60см: свободно<br>
+                    • 🟡 10-60см: осторожно (прерывистый сигнал)<br>
+                    • 🔴 <10см: СТОП! (непрерывный сигнал)<br>
+                    • 🖱️ Зажмите правую кнопку мыши для вращения камеры
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Подключаем Three.js -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module" src="script.js"></script>
+</body>
+</html>
